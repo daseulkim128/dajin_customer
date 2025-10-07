@@ -24,20 +24,25 @@ customer_info = Table(
 )
 metadata.create_all(sqlite_engine)
 
-# 4️⃣ MariaDB -> SQLite 데이터 복사
-with mysql_engine.connect() as src_conn, sqlite_engine.connect() as dest_conn:
-    result = src_conn.execute(text("SELECT customer_nm, customer_phone, customer_address FROM customer_info"))
-    for row in result:
-        dest_conn.execute(
-            customer_info.insert().values(
-                customer_nm=row[0],     # 이름
-                customer_phone=row[1],  # 전화번호
-                customer_address=row[2] # 주소
+# SQLite DB 없으면 MariaDB에서 마이그레이션
+if not os.path.exists("dajin.db"):
+    print("SQLite DB 없음 → MariaDB에서 데이터 복사 시작")
+    mysql_engine  = create_engine("mysql+pymysql://root:password@localhost:3306/dajin")
+    
+    with mysql_engine.connect() as src_conn, sqlite_engine.connect() as dest_conn:
+        result = src_conn.execute(text("SELECT customer_nm, customer_phone, customer_address FROM customer_info"))
+        for row in result:
+            dest_conn.execute(
+                customer_info.insert().values(
+                    customer_nm=row[0],
+                    customer_phone=row[1],
+                    customer_address=row[2]
+                )
             )
-        )
-    dest_conn.commit()
-
-print("데이터 마이그레이션 완료 ✅")
+        dest_conn.commit()
+    print("✅ 데이터 마이그레이션 완료")
+else:
+    print("SQLite DB 존재 → 마이그레이션 건너뜀")
 
 # db 연결 테스트 
 #with engine.connect() as conn:
