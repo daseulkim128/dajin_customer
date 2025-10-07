@@ -1,0 +1,99 @@
+/* 전체 배경 & 폰트 */
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5;
+    padding: 30px;
+    color: #333;
+}
+
+/* 제목 */
+h1 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+}
+
+/* 폼 스타일 */
+form {
+    margin-bottom: 20px;
+}
+
+form input[type="text"], form select {
+    padding: 8px 12px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+form button {
+    padding: 8px 16px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+form button:hover {
+    background-color: #2980b9;
+}
+
+/* 테이블 스타일 */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+}
+
+th {
+    background-color: #3498db;
+    color: white;
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background-color: #f7f9fb;
+}
+
+tr:hover {
+    background-color: #eaf1f8;
+}
+
+/* 페이징 */
+.pagination {
+    margin-top: 20px;
+    text-align: center;
+    overflow-x: auto;  /* 가로 스크롤 가능 */
+    white-space: nowrap;
+    padding: 10px 0;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+}
+
+.pagination a, .pagination strong {
+    display: inline-block;
+    margin: 0 3px;
+    padding: 6px 12px;
+    text-decoration: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    color: #3498db;
+    min-width: 30px;
+    text-align: center;
+}
+
+.pagination a:hover {
+    background-color: #3498db;
+    color: white;
+}
+
+.pagination strong {
+    background-color: #3498db;
+    color: white;
+    border-color: #3498db;
+}

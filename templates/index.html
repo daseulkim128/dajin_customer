@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">    
+    <title>고객 조회</title>
+</head>
+<body>
+    <h1>고객 정보 검색</h1>
+    <form method="get" action="/">
+        <select name="field">
+            <option value="customer_nm" {% if field == "customer_nm" %}selected{% endif %}>이름</option>
+            <option value="customer_phone" {% if field == "customer_phone" %}selected{% endif %}>전화번호</option>
+            <option value="customer_address" {% if field == "customer_address" %}selected{% endif %}>주소</option>
+        </select>
+        <input type="text" name="query" value="{{ query }}">
+        <button type="submit">검색</button>
+    </form>
+    <hr>
+    <table border="1">
+        <tr>
+            <th>이름</th>
+            <th>전화번호</th>
+            <th>주소</th>
+        </tr>
+        {% for row in results %}
+        <tr>
+            <td>{{ row[0] }}</td>
+            <td>{{ row[1] }}</td>
+            <td>{{ row[2] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div class="pagination">
+        {% if page > 1 %}
+            <a href="?page={{ page - 1 }}&field={{ field }}&query={{ query }}">이전</a>
+        {% endif %}
+
+        {% for p in range(start_page, end_page + 1) %}
+            {% if p == page %}
+                <strong>{{ p }}</strong>
+            {% else %}
+                <a href="?page={{ p }}&field={{ field }}&query={{ query }}">{{ p }}</a>
+            {% endif %}
+        {% endfor %}
+
+        {% if page < total_pages %}
+            <a href="?page={{ page + 1 }}&field={{ field }}&query={{ query }}">다음</a>
+        {% endif %}
+    </div>
+</body>
+</html>
