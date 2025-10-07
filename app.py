@@ -1,12 +1,43 @@
 
 from flask import Flask, render_template, request
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, Column, Integer, String, MetaData, Table
 import math
 
 app = Flask(__name__)
 
-# db 연결
-engine = create_engine("mysql+pymysql://root:password@localhost:3306/dajin")
+
+# 로컬디비는 클라우드에서 배포할수 없어서 mariadb는 사용할 수 없어, 기존 디비 연결하고 카피뜸
+mysql_engine  = create_engine("mysql+pymysql://root:password@localhost:3306/dajin")
+
+# sqlite_db 연결
+sqlite_engine  = create_engine("sqlite:///dajin.db", connect_args={"check_same_thread": False})
+
+# 3️⃣ SQLite 테이블 생성
+metadata = MetaData()
+
+customer_info = Table(
+    'customer_info', metadata,
+    Column('id', Integer, primary_key=True),
+    Column('customer_nm', String),
+    Column('customer_phone', String),
+    Column('customer_address', String)
+)
+metadata.create_all(sqlite_engine)
+
+# 4️⃣ MariaDB -> SQLite 데이터 복사
+with mysql_engine.connect() as src_conn, sqlite_engine.connect() as dest_conn:
+    result = src_conn.execute(text("SELECT customer_nm, customer_phone, customer_address FROM customer_info"))
+    for row in result:
+        dest_conn.execute(
+            customer_info.insert().values(
+                customer_nm=row[0],     # 이름
+                customer_phone=row[1],  # 전화번호
+                customer_address=row[2] # 주소
+            )
+        )
+    dest_conn.commit()
+
+print("데이터 마이그레이션 완료 ✅")
 
 # db 연결 테스트 
 #with engine.connect() as conn:
@@ -25,7 +56,7 @@ def index():
     PER_PAGE = 20
     offset = (page - 1) * PER_PAGE
 
-    with engine.connect() as conn:
+    with sqlite_engine.connect() as conn:
         if query:  # 검색어가 있으면 조건 추가
             count_sql = text(f"SELECT COUNT(*) FROM customer_info WHERE {field} LIKE :value")
             total_count = conn.execute(count_sql, {"value": f"%{query}%"}).scalar()
@@ -61,9 +92,11 @@ def index():
 # WSGI 서버용 진입점
 if __name__ == "__main__":
     from waitress import serve
-    serve(app, host='0.0.0.0', port=5000)
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    serve(app, host='0.0.0.0', port=port)
 
-    
+
 # exe 파일 사용시 
 # if __name__ == "__main__":
 #     import webbrowser
