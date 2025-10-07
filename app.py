@@ -6,26 +6,32 @@ import math
 
 app = Flask(__name__)
 
+print("현재 작업 디렉토리:", os.getcwd())
 
-# SQLite 연결
-sqlite_engine = create_engine("sqlite:///dajin.db", connect_args={"check_same_thread": False})
+# SQLite 경로 지정
+sqlite_path = os.path.join(os.getcwd(), "dajin.db")
 
-# 테이블 정의
-metadata = MetaData()
-customer_info = Table(
-    'customer_info', metadata,
-    Column('id', Integer, primary_key=True),
-    Column('customer_nm', String),
-    Column('customer_phone', String),
-    Column('customer_address', String)
-)
-metadata.create_all(sqlite_engine)
+# 🔹 SQLite 파일이 없을 때만 MariaDB에서 복사
+if not os.path.exists(sqlite_path):
+    print(f"SQLite DB 없음 → MariaDB에서 데이터 복사 시작 ({sqlite_path})")
 
-# 🔹 로컬에서만 MariaDB -> SQLite 마이그레이션
-if not os.path.exists("dajin.db"):  # SQLite 파일 없으면 실행
-    print("SQLite DB 없음 → MariaDB에서 데이터 복사 시작")
-    from sqlalchemy import create_engine
-    mysql_engine = create_engine("mysql+pymysql://root:password@localhost:3306/dajin")
+    # SQLite 엔진 (파일이 실제 생성되기 전)
+    sqlite_engine = create_engine(f"sqlite:///{sqlite_path}", connect_args={"check_same_thread": False})
+
+    # 테이블 정의
+    metadata = MetaData()
+    customer_info = Table(
+        'customer_info', metadata,
+        Column('id', Integer, primary_key=True),
+        Column('customer_nm', String),
+        Column('customer_phone', String),
+        Column('customer_address', String)
+    )
+    metadata.create_all(sqlite_engine)
+
+    # MariaDB → SQLite 데이터 복사
+    from sqlalchemy import create_engine as create_mysql_engine
+    mysql_engine = create_mysql_engine("mysql+pymysql://root:password@localhost:3306/dajin")
     
     with mysql_engine.connect() as src_conn, sqlite_engine.connect() as dest_conn:
         result = src_conn.execute(text(
@@ -42,13 +48,10 @@ if not os.path.exists("dajin.db"):  # SQLite 파일 없으면 실행
         dest_conn.commit()
     print("✅ 데이터 마이그레이션 완료")
 else:
-    print("SQLite DB 존재 → 마이그레이션 건너뜀")
+    print(f"SQLite DB 존재 → 마이그레이션 건너뜀 ({sqlite_path})")
 
-# db 연결 테스트 
-#with engine.connect() as conn:
-#    result = conn.execute(text("SELECT * FROM customer_info LIMIT 100"))
-#    for row in result:
-#        print(row)
+# 이후에는 이 SQLite를 사용
+sqlite_engine = create_engine(f"sqlite:///{sqlite_path}", connect_args={"check_same_thread": False})
 
 # 한 페이지에 보여줄 데이터 수
 PER_PAGE = 20
