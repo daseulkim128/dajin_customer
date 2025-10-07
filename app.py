@@ -7,15 +7,11 @@ import math
 app = Flask(__name__)
 
 
-# 로컬디비는 클라우드에서 배포할수 없어서 mariadb는 사용할 수 없어, 기존 디비 연결하고 카피뜸
-mysql_engine  = create_engine("mysql+pymysql://root:password@localhost:3306/dajin")
+# SQLite 연결
+sqlite_engine = create_engine("sqlite:///dajin.db", connect_args={"check_same_thread": False})
 
-# sqlite_db 연결
-sqlite_engine  = create_engine("sqlite:///dajin.db", connect_args={"check_same_thread": False})
-
-# 3️⃣ SQLite 테이블 생성
+# 테이블 정의
 metadata = MetaData()
-
 customer_info = Table(
     'customer_info', metadata,
     Column('id', Integer, primary_key=True),
@@ -25,13 +21,16 @@ customer_info = Table(
 )
 metadata.create_all(sqlite_engine)
 
-# SQLite DB 없으면 MariaDB에서 마이그레이션
-if not os.path.exists("dajin.db"):
+# 🔹 로컬에서만 MariaDB -> SQLite 마이그레이션
+if not os.path.exists("dajin.db"):  # SQLite 파일 없으면 실행
     print("SQLite DB 없음 → MariaDB에서 데이터 복사 시작")
-    mysql_engine  = create_engine("mysql+pymysql://root:password@localhost:3306/dajin")
+    from sqlalchemy import create_engine
+    mysql_engine = create_engine("mysql+pymysql://root:password@localhost:3306/dajin")
     
     with mysql_engine.connect() as src_conn, sqlite_engine.connect() as dest_conn:
-        result = src_conn.execute(text("SELECT customer_nm, customer_phone, customer_address FROM customer_info"))
+        result = src_conn.execute(text(
+            "SELECT customer_nm, customer_phone, customer_address FROM customer_info"
+        ))
         for row in result:
             dest_conn.execute(
                 customer_info.insert().values(
